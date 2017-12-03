@@ -123,7 +123,7 @@ def polygonpics():
         axes.spines['left'].set_color('none')
         axes.spines['top'].set_color('none')
         axes.set_title('{}-gon'.format(i))
-        fig.savefig('{:04d}-gon.pdf'.format(i))
+        fig.savefig('{:04d}-gon.jpg'.format(i))
         plt.close('all')
 
 def rotations():
@@ -152,7 +152,7 @@ def rotations():
         axes.spines['left'].set_color('none')
         axes.spines['top'].set_color('none')
         axes.set_title('{}-gon'.format(i))
-        fig.savefig('{:04d}-gon_rotated.pdf'.format(i))
+        fig.savefig('{:04d}-gon_rotated.jpg'.format(i))
         plt.close('all')
 
 def colorconcentrics():
@@ -178,7 +178,7 @@ def colorconcentrics():
         axes.spines['bottom'].set_color('none')
         axes.spines['left'].set_color('none')
         axes.spines['top'].set_color('none')
-        fig.savefig('{:04d}-gon_colorconc.pdf'.format(i))
+        fig.savefig('{:04d}-gon_colorconc.jpg'.format(i))
         plt.close('all')
 
 polygonpics()
