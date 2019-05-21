@@ -3,7 +3,23 @@
 import matplotlib.pyplot as plt
 from math import sin, cos, pi
 import numpy as np
-import os
+
+def translate(mat, movement):
+    """Translate a matrix in 2-D Cartesian space.
+
+    Uses numpy matrices to translate a collection of 2-Dimensional
+    vectors as a geometric translation.
+
+    Positional Arguments:
+    mat -- NumPy Matrix that contains all vectors to be translated
+    movement -- 2-tuple coordinate to use as the translation.
+                Example: Move vectors 2 up and 3 right = (2, 3)
+    
+    Returns:
+    Matrix of translated vectors
+    """
+    movement = np.array(movement).reshape(2, 1)
+    return mat + movement
 
 def rotate(mat, theta, center, counterclock=True):
     """Rotate a vector matrix around a point.
@@ -45,26 +61,55 @@ def rotate(mat, theta, center, counterclock=True):
                            theta, (0, 0), counterclock=False),
                        center))
 
-def polycircumradius(n, s):
+def reflect(mat, point1, point2):
+    """Reflect a vector matrix across a line.
+
+    """
+    try:
+        slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
+        y_intercept = point1[1] - (slope * point1[0])
+    except ZeroDivisionError:
+        mat = translate(mat, (-1 * point1[0], 0))
+        mat = (np.matrix([[-1, 0],
+                          [ 0, 1]]) * mat)
+        mat = translate(mat, (point1[0], 0))
+        return mat
+    if slope == 0:
+        mat = translate(mat, (0, -1 * point1[1]))
+        mat = (np.matrix([[ 1, 0],
+                          [ 0,-1]]) * mat)
+        mat = translate(mat, (0, point1[1]))
+        return mat
+    if y_intercept != 0:
+        mat = translate(mat, (0, -1 * y_intercept))
+    mat = rotate(mat, (2*pi) - np.arctan(slope), (0, 0))
+    mat = (np.matrix([[ 1, 0],
+                      [ 0,-1]]) * mat)
+    mat = rotate(mat, (2*pi) - np.arctan(slope), (0, 0), counterclock=False)
+    if y_intercept != 0:
+        mat = translate(mat, (0, y_intercept))
+    return mat
+
+def poly_circum_radius(n, s):
     """Calculates the radius of a circle that circumscribes
     a regular polygon with n sides and a sidelength of s.
     """
     radius = s / ((4 - (4 * ((cos(pi / n)) ** 2))) ** 0.5)
     return(radius)
 
-def vertices(n, s, center):
+def poly_vertices(n, s, center):
     """Calculates the vertices of a regular polygon with n sides of
     side length s centered at tuple center.
     """
     points = []
     h, k = center
-    r = polycircumradius(n, s)
+    r = poly_circum_radius(n, s)
     for i in range(n):
         points.append((r * cos(2 * pi / n * i) + h,
                       (r * sin(2 * pi / n * i) + k)))
     return(points)
 
-def sitstraight(vertex_matrix, n, center):
+def sit_straight(vertex_matrix, n, center):
     """Rotates a regular polygon the correct amount to make it
     sit "flat on a side".
     """
@@ -83,13 +128,13 @@ def makepoly(n, s, center, forgraph):
     same as the beginning point (so that a plotting function
     completes the shape).
     """
-    polygon_vertices = vertices(n, s, center)
+    polygon_vertices = poly_vertices(n, s, center)
     if forgraph:
         polygon_vertices.append(polygon_vertices[0])
     vertices_x = [p[0] for p in polygon_vertices]
     vertices_y = [p[1] for p in polygon_vertices]
     vertex_matrix = np.matrix([vertices_x, vertices_y])
-    vertex_matrix = sitstraight(vertex_matrix, n, center)
+    vertex_matrix = sit_straight(vertex_matrix, n, center)
     return(vertex_matrix)
 
 def plotpoly(n, s, center, axes, forgraph, color='k'):
@@ -99,88 +144,3 @@ def plotpoly(n, s, center, axes, forgraph, color='k'):
     vertex_matrix = makepoly(n, s, center, forgraph)
     axes.plot([x for x in vertex_matrix[0].flat],
               [y for y in vertex_matrix[1].flat], color)
-
-
-######################
-#    Demo Methods    #
-######################
-
-def polygonpics():
-    """Generates polygons from n = 3-30.
-    """
-    for i in range(3, 31):
-        n = i
-        s = 3
-        center = (0, 0)
-        forgraph = True
-        fig, axes= plt.subplots()
-        plotpoly(n, s, center, axes, True, 'b')
-        axes.set_aspect('equal')
-        axes.set_xticks([])
-        axes.set_yticks([])
-        axes.spines['right'].set_color('none')
-        axes.spines['bottom'].set_color('none')
-        axes.spines['left'].set_color('none')
-        axes.spines['top'].set_color('none')
-        axes.set_title('{}-gon'.format(i))
-        fig.savefig('{:04d}-gon.jpg'.format(i))
-        plt.close('all')
-
-def rotations():
-    """Plots a polygon, rotates it a little bit, plots it again,
-    and continues all the way around the circle. Repeats for
-    n = 3 - 6.
-    """
-    for i in range(3, 7):
-        n = i
-        s = 3
-        center = (0, 0)
-        forgraph = True
-        rotations = np.linspace(0, 2 * pi, 100)
-        fig, axes = plt.subplots()
-        for j in range(len(rotations)):
-            vertex_matrix = makepoly(n, s, center, forgraph)
-            vertex_matrix = rotate(vertex_matrix, rotations[j],
-                                      center, counterclock=False)
-            axes.plot([x for x in vertex_matrix[0].flat],
-                      [y for y in vertex_matrix[1].flat], 'r', lw='0.05')
-        axes.set_aspect('equal')
-        axes.set_xticks([])
-        axes.set_yticks([])
-        axes.spines['right'].set_color('none')
-        axes.spines['bottom'].set_color('none')
-        axes.spines['left'].set_color('none')
-        axes.spines['top'].set_color('none')
-        axes.set_title('{}-gon'.format(i))
-        fig.savefig('{:04d}-gon_rotated.jpg'.format(i))
-        plt.close('all')
-
-def colorconcentrics():
-    """Plots a polygon, increases the size exponentially, cycles to
-    a new color, and plot again. Repeat many times.
-    """
-    colors = []
-    for i in range(20):
-        colors += ['b', 'g', 'r']
-    sides = range(1, len(colors) + 1, 1)
-    for i in range(3, 9):
-        n = i
-        center = (0, 0)
-        forgraph = True
-        fig, axes = plt.subplots()
-        for j in range(len(sides)):
-            s = sides[j] ** 2
-            plotpoly(n, s, center, axes, forgraph, colors[j])
-        axes.set_aspect('equal')
-        axes.set_xticks([])
-        axes.set_yticks([])
-        axes.spines['right'].set_color('none')
-        axes.spines['bottom'].set_color('none')
-        axes.spines['left'].set_color('none')
-        axes.spines['top'].set_color('none')
-        fig.savefig('{:04d}-gon_colorconc.jpg'.format(i))
-        plt.close('all')
-
-polygonpics()
-rotations()
-colorconcentrics()
